@@ -1,0 +1,85 @@
+create table product_prices
+(
+    Product varchar(100) not null primary key,
+    Price int not null
+);
+
+create table customers
+(
+    id serial primary key,
+    NameCustomer varchar(150) not null,
+    Phone varchar(20) unique check (Phone != '')
+);
+
+create TABLE orders
+(
+	OrderId serial PRIMARY KEY,
+	TimeOrder Date,
+	Product VARCHAR(100),
+	Quantity INT CHECK (Quantity > 0 AND Quantity <= 1000),
+	CostumerId INT,
+	FOREIGN KEY (Product) REFERENCES product_prices(Product),
+	FOREIGN KEY (CostumerId) REFERENCES customers(id)
+);
+
+insert into product_prices(Product, Price) values ('Розы', 100);
+insert into product_prices(Product, Price) values ('Лилии', 50);
+insert into product_prices(Product, Price) values ('Ромашки', 25);
+
+insert into customers(NameCustomer, Phone) values ('Петя','+7-920-004-11-77');
+insert into customers(NameCustomer, Phone) values ('Петр','4-11-77');
+insert into customers(NameCustomer, Phone) values ('Василиса','8-800-555-35');
+insert into customers(id, NameCustomer, Phone) values (5, 'Василий','162161');
+
+insert into orders(TimeOrder, Product, Quantity) values (NOW(), 'Розы', 8);
+insert into orders(TimeOrder, Product, Quantity, CostumerId) values (NOW(), 'Розы', 100, 1);
+insert into orders(TimeOrder, Product, Quantity, CostumerId) values (NOW(), 'Ромашки', 5, 1);
+insert into orders(TimeOrder, Product, Quantity, CostumerId) values (NOW(), 'Лилии', 20, 3);
+
+insert into orders(TimeOrder, Product, Quantity, CostumerId) values ('2022-11-03', 'Лилии', 20, 3);
+insert into orders(TimeOrder, Product, Quantity, CostumerId) values ('2022-11-04', 'Лилии', 20, 3);
+insert into orders(TimeOrder, Product, Quantity, CostumerId) values ('2022-12-04', 'Лилии', 20, 3);
+
+/* 
+1. По идентификатору заказа получить данные заказа и данные клиента,
+создавшего этот заказ 
+*/
+
+SELECT * FROM orders, customers WHERE orders.costumerid = customers.id AND orders.orderid = 3;
+
+/*
+2. Получить данные всех заказов одного клиента по идентификатору
+клиента за последний месяц
+*/
+
+SELECT * 
+FROM orders 
+WHERE EXTRACT(MONTH FROM orders.timeorder) = EXTRACT(MONTH FROM NOW()) AND EXTRACT(YEAR FROM orders.timeorder) = EXTRACT(YEAR FROM NOW())
+AND orders.costumerid = 3; 
+
+SELECT * 
+FROM orders 
+WHERE EXTRACT(MONTH FROM orders.timeorder) = EXTRACT(MONTH FROM NOW()) AND EXTRACT(YEAR FROM orders.timeorder) = EXTRACT(YEAR FROM NOW())
+AND orders.costumerid IS NULL; 
+
+/*
+3. Найти заказ с максимальным количеством купленных цветов, вывести их
+название и количество
+*/
+
+SELECT orderid, product, quantity
+FROM orders
+WHERE quantity = (SELECT MAX(quantity) FROM orders);
+
+/*
+4. Вывести общую выручку (сумму золотых монет по всем заказам) за все
+время
+*/
+
+SELECT SUM(orders.quantity) * product_prices.price AS revenue, orders.product 
+FROM orders, product_prices
+WHERE orders.product = product_prices.product
+GROUP BY orders.product, product_prices.price;
+
+
+
